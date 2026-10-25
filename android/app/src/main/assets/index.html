@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="color-scheme" content="light"><title>Hato App</title><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header><div><span class="eyebrow">GESTIÓN GANADERA</span><h1>Hato App</h1></div><span id="network" class="pill">Comprobando conexión…</span></header>
+<main>
+<section class="panel setup"><h2>Servidor</h2><p>Introduce la URL HTTPS del servidor Hato App. Se guarda solo en este dispositivo.</p><div class="server-row"><input id="serverUrl" type="url" placeholder="https://tu-hato.onrender.com" autocomplete="url"><button id="saveServer">Guardar</button></div><div class="actions"><button class="secondary" id="connect">Conectar y descargar datos</button><button class="secondary" id="sync">Sincronizar pendientes</button></div><p id="status" role="status">Configura el servidor para empezar. La app puede consultar los datos guardados cuando no haya Internet.</p></section>
+<section class="stats"><div class="stat"><span>Animales locales</span><strong id="count">0</strong></div><div class="stat"><span>Pendientes</span><strong id="pendingCount">0</strong></div></section>
+<section class="panel"><div class="section-heading"><h2>Animales</h2><button id="newAnimal">＋ Registrar</button></div><input id="search" type="search" placeholder="Buscar por arete o nombre"><div id="animalList" class="animal-list"><p class="muted">Conecta con el servidor para descargar los datos iniciales.</p></div></section>
+<section class="panel" id="editorPanel" hidden><div class="section-heading"><h2 id="editorTitle">Registrar animal</h2><button id="cancelEdit" class="icon-button" aria-label="Cerrar">✕</button></div><form id="animalForm">
+<input id="animalKey" type="hidden"><label>Identificación / arete<input id="identificacion" required maxlength="100"></label><label>Nombre (opcional)<input id="nombre" maxlength="100"></label><div class="two"><label>Fecha de nacimiento<input id="fechaNacimiento" type="date" required></label><label>Sexo<select id="sexo" required><option value="Macho">Macho</option><option value="Hembra">Hembra</option></select></label></div><div class="two"><label>Finca<select id="finca" required></select></label><label>Tipo de animal<select id="tipoAnimal" required></select></label></div><p class="muted">Las fotografías no se incluyen en la cola offline de esta primera versión.</p><button type="submit" class="full">Guardar animal</button><p id="formStatus" role="status"></p></form></section>
+<section class="notice"><strong>Importante</strong><p>Los cambios offline se guardan en este dispositivo y se envían cuando vuelvas a tener conexión. Esta versión todavía no incluye inicio de sesión; no publiques el backend con datos reales hasta añadir autenticación y permisos.</p></section>
+</main><footer>Hato App · versión inicial de prueba</footer><script src="app.js"></script>
+</body></html>

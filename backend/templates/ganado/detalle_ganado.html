@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .detalle-card { max-width: 760px; text-align: left; margin: 0 auto; }
+    .detalle-card h1, .detalle-card h2, .detalle-card h3, .detalle-card p { color: #fff; }
+    .detalle-card h1 { text-align: center; }
+    .detalle-card h2 { font-size: 20px; margin: 18px 0 8px; }
+    .detalle-card hr { border: 0; border-top: 1px solid #383c45; margin: 18px 0; }
+    .detalle-card a { color: #00cba9; text-decoration: none; }
+    .top-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; justify-content: center; }
+    .top-row .datos { flex: 1 1 260px; }
+    .qr-box { text-align: center; }
+    .qr-box img { width: 150px; height: 150px; background: #fff; padding: 6px; border-radius: 8px; }
+    .qr-box small { display: block; color: #b0b0b0; margin-top: 4px; }
+    .resumen { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+    .resumen .chip { flex: 1 1 140px; background: #333743; border-radius: 10px; padding: 10px; text-align: center; color: #fff; }
+    .resumen .chip b { display: block; font-size: 18px; color: #00cba9; }
+    .resumen .chip span { color: #b0b0b0; font-size: 13px; }
+    .ev-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; align-items: end; }
+    .ev-form label { color: #b0b0b0; font-size: 13px; display: block; margin-bottom: 3px; }
+    .ev-form input, .ev-form select { width: 100%; box-sizing: border-box; padding: 10px; font-size: 16px; border-radius: 6px; border: 1px solid #555; background: #1f2128; color: #fff; }
+    .ev-tabla { background: #1f2128; color: #fff; box-shadow: none; }
+    .ev-tabla th { background: #333743; color: #fff; }
+    .ev-tabla td, .ev-tabla th { border-color: #383c45; padding: 10px; }
+    .tabla-scroll { overflow-x: auto; }
+    .detalle-acciones { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .estado-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin-bottom: 12px; }
+    .estado-row select, .estado-row input { padding: 8px; font-size: 15px; border-radius: 6px; border: 1px solid #555; background: #1f2128; color: #fff; }
+    .badge { padding: 4px 12px; border-radius: 14px; font-weight: bold; color: #fff; }
+    .est-activo { background: #1aa23f; } .est-vendido { background: #e8853a; } .est-muerto { background: #6c757d; }
+    .aviso { background: #3a2f1f; border: 1px solid #e8853a; border-radius: 10px; padding: 10px 14px; margin: 12px 0; color: #fff; }
+    .aviso.venc { background: #3d2226; border-color: #dc3545; }
+    .aviso ul { margin: 6px 0 0; padding-left: 18px; }
+    .t-venc { color: #ff6b6b; font-weight: bold; } .t-ok { color: #00cba9; }
+    .detalle-foto { text-align: center; margin-top: 18px; }
+    .detalle-foto img { max-width: 100%; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,.3); }
+</style>
+
+<div class="main-container">
+    <div class="card detalle-card">
+
+        <h1 class="card-title">🐂 Animal: <span id="identificacion">{{ ganado.identificacion }}</span></h1>
+
+        <div class="estado-row">
+            <span class="badge est-{{ ganado.estado|lower }}">{{ ganado.estado }}{% if ganado.fecha_estado %} · {{ ganado.fecha_estado }}{% endif %}</span>
+            <select id="estado-sel" aria-label="Nuevo estado">
+                {% for e in estados %}<option value="{{ e }}" {% if e == ganado.estado %}selected{% endif %}>{{ e }}</option>{% endfor %}
+            </select>
+            <input type="date" id="estado-fecha" value="{{ hoy }}" max="{{ hoy }}" aria-label="Fecha del cambio">
+            <button id="btn-estado" style="background-color:#007bff;">Cambiar estado</button>
+        </div>
+        <p id="estado-msg" style="text-align:center; margin:0 0 8px;"></p>
+
+        {% if pendientes %}
+        <div class="aviso {% if pendientes[0].proxima_fecha.isoformat() < hoy %}venc{% endif %}">
+            <strong>🔔 Pendiente para este animal</strong>
+            <ul>
+            {% for p in pendientes %}
+                <li>{{ p.tipo }}{% if p.descripcion %}: {{ p.descripcion }}{% endif %} — {{ p.proxima_fecha }}
+                    {% if p.proxima_fecha.isoformat() < hoy %}<span class="t-venc">(vencida)</span>{% endif %}
+                    <button class="btn-hecho" data-id="{{ p.id }}" style="padding:2px 8px; margin-left:6px;">Hecho</button></li>
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="top-row">
+            <div class="datos">
+                <p><i class="fa-solid fa-tag"></i> <strong>Nombre:</strong> {{ ganado.nombre or 'N/A' }}</p>
+                <p><i class="fa-solid fa-calendar-days"></i> <strong>Nacimiento:</strong> {{ ganado.fecha_nacimiento }} ({{ edad_meses }} meses)</p>
+                <p><i class="fa-solid fa-venus-mars"></i> <strong>Sexo:</strong> {{ ganado.sexo }}</p>
+                <p><i class="fa-solid fa-cow"></i> <strong>Tipo:</strong> {{ ganado.tipo_animal.nombre if ganado.tipo_animal else 'No definido' }}</p>
+                <p><i class="fa-solid fa-location-dot"></i> <strong>Finca:</strong>
+                    {% if ganado.finca %}<a href="/fincas/{{ ganado.finca.id }}">{{ ganado.finca.nombre }}</a>{% else %}<span style="color:#dc3545;">No asignada</span>{% endif %}
+                </p>
+            </div>
+            <div class="qr-box">
+                <img src="/ganado/{{ ganado.id }}/qr.png" alt="Código QR de {{ ganado.identificacion }}">
+                <small>Escanéalo para abrir esta ficha</small>
+                <small><a href="/ganado/{{ ganado.id }}/qr.png" download="QR-{{ ganado.identificacion }}.png">Descargar QR</a></small>
+            </div>
+        </div>
+
+        <div class="resumen">
+            <div class="chip"><b>{% if ultimo_peso %}{{ '%g'|format(ultimo_peso.valor) }} kg{% else %}—{% endif %}</b><span>Último peso{% if ultimo_peso %} ({{ ultimo_peso.fecha }}){% endif %}</span></div>
+            <div class="chip"><b>{% if ultima_vacuna %}{{ ultima_vacuna.descripcion or 'Vacuna' }}{% else %}—{% endif %}</b><span>Última vacuna{% if ultima_vacuna %} ({{ ultima_vacuna.fecha }}){% endif %}</span></div>
+            <div class="chip"><b>{{ ganado.eventos|length }}</b><span>Eventos registrados</span></div>
+        </div>
+
+        <hr>
+        <h2>➕ Registrar evento</h2>
+        <form id="evento-form" class="ev-form">
+            <div>
+                <label for="ev-tipo">Tipo</label>
+                <select id="ev-tipo" required>
+                    {% for t in tipos_evento %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="ev-fecha">Fecha</label>
+                <input type="date" id="ev-fecha" value="{{ hoy }}" required>
+            </div>
+            <div>
+                <label for="ev-valor" id="ev-valor-label">Valor (opcional)</label>
+                <input type="number" id="ev-valor" step="0.1" min="0" inputmode="decimal">
+            </div>
+            <div>
+                <label for="ev-desc" id="ev-desc-label">Detalle</label>
+                <input type="text" id="ev-desc" maxlength="300" placeholder="Nota (opcional)">
+            </div>
+            <div>
+                <label for="ev-proxima">Próxima fecha (opcional)</label>
+                <input type="date" id="ev-proxima" min="{{ hoy }}">
+            </div>
+            <div><button type="submit" style="width:100%;">Guardar evento</button></div>
+        </form>
+        <p id="ev-mensaje" style="text-align:center; margin-top:10px;"></p>
+
+        <h2>📋 Historial</h2>
+        {% if ganado.eventos %}
+        <div class="tabla-scroll">
+            <table class="ev-tabla">
+                <thead><tr><th>Fecha</th><th>Tipo</th><th>Valor</th><th>Detalle</th><th>Próxima</th><th></th></tr></thead>
+                <tbody>
+                {% for e in ganado.eventos %}
+                    <tr>
+                        <td>{{ e.fecha }}</td>
+                        <td>{{ e.tipo }}</td>
+                        <td>{% if e.valor is not none %}{{ '%g'|format(e.valor) }}{% if e.tipo == 'Peso' %} kg{% endif %}{% else %}—{% endif %}</td>
+                        <td>{{ e.descripcion or '—' }}</td>
+                        <td>
+                            {% if not e.proxima_fecha %}—
+                            {% elif e.atendido %}<span class="t-ok">✔ {{ e.proxima_fecha }}</span>
+                            {% elif e.proxima_fecha.isoformat() < hoy %}<span class="t-venc">⚠ {{ e.proxima_fecha }}</span>
+                            {% else %}{{ e.proxima_fecha }}{% endif %}
+                        </td>
+                        <td><button class="btn-borrar-ev" data-id="{{ e.id }}" style="background-color:#dc3545;" title="Eliminar evento">✕</button></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <p style="color:#b0b0b0;">Aún no hay eventos. Registra la primera vacuna o el primer peso arriba.</p>
+        {% endif %}
+
+        <hr>
+        <div class="detalle-acciones">
+            <button onclick="window.location.href='/ganado/editar/{{ ganado.id }}'" style="background-color:#007bff;"><i class="fa-solid fa-pen"></i> Editar</button>
+            <button id="btn-eliminar" data-id="{{ ganado.id }}" style="background-color:#dc3545;"><i class="fa-solid fa-trash-can"></i> Eliminar</button>
+            <button onclick="window.location.href='/ganado/lista'" style="background-color:#6c757d;"><i class="fa-solid fa-arrow-left"></i> Volver a la lista</button>
+        </div>
+        <p id="mensaje-feedback" style="text-align:center; margin-top:15px;"></p>
+
+        {% if ganado.foto %}
+            <div class="detalle-foto"><img src="/{{ ganado.foto }}" alt="Foto de {{ ganado.identificacion }}"></div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    const GANADO_ID = {{ ganado.id }};
+    const evMsg = document.getElementById("ev-mensaje");
+    const tipoSel = document.getElementById("ev-tipo");
+    const valorLabel = document.getElementById("ev-valor-label");
+    const valorInput = document.getElementById("ev-valor");
+    const descLabel = document.getElementById("ev-desc-label");
+    const descInput = document.getElementById("ev-desc");
+
+    // Adapta las etiquetas según el tipo de evento
+    function ajustarCampos() {
+        const t = tipoSel.value;
+        valorLabel.textContent = t === "Peso" ? "Peso (kg) *" : "Valor (opcional)";
+        valorInput.required = (t === "Peso");
+        if (t === "Vacuna") { descLabel.textContent = "Vacuna aplicada *"; descInput.placeholder = "Ej.: Aftosa"; descInput.required = true; }
+        else if (t === "Tratamiento") { descLabel.textContent = "Tratamiento *"; descInput.placeholder = "Ej.: Antibiótico, dosis"; descInput.required = true; }
+        else { descLabel.textContent = "Detalle"; descInput.placeholder = "Nota (opcional)"; descInput.required = false; }
+    }
+    tipoSel.addEventListener("change", ajustarCampos);
+    ajustarCampos();
+
+    document.getElementById("evento-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const cuerpo = {
+            tipo: tipoSel.value,
+            fecha: document.getElementById("ev-fecha").value,
+            valor: valorInput.value === "" ? null : parseFloat(valorInput.value),
+            descripcion: descInput.value.trim() || null,
+            proxima_fecha: document.getElementById("ev-proxima").value || null
+        };
+        const r = await fetch(`/ganado/${GANADO_ID}/eventos`, {
+            method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(cuerpo)
+        });
+        if (r.ok) { location.reload(); return; }
+        const err = await r.json().catch(() => ({}));
+        evMsg.style.color = "#ff6b6b";
+        evMsg.textContent = "❌ " + (typeof err.detail === "string" ? err.detail : "Revisa los datos del evento.");
+    });
+
+    document.getElementById("btn-estado").addEventListener("click", async () => {
+        const msg = document.getElementById("estado-msg");
+        const nuevo = document.getElementById("estado-sel").value;
+        if (nuevo !== "Activo" && !confirm(`¿Marcar este animal como ${nuevo}? Su historial se conserva y ya no aparecerá en la lista de activos ni en las alertas.`)) return;
+        const r = await fetch(`/ganado/${GANADO_ID}/estado`, {
+            method: "PUT", headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ estado: nuevo, fecha: document.getElementById("estado-fecha").value || null })
+        });
+        if (r.ok) { location.reload(); return; }
+        const err = await r.json().catch(() => ({}));
+        msg.style.color = "#ff6b6b";
+        msg.textContent = "❌ " + (typeof err.detail === "string" ? err.detail : "No se pudo cambiar el estado.");
+    });
+
+    document.querySelectorAll(".btn-hecho").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const r = await fetch(`/ganado/eventos/${btn.dataset.id}/atendido`, { method: "POST" });
+            if (r.ok) location.reload();
+        });
+    });
+
+    document.querySelectorAll(".btn-borrar-ev").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            if (!confirm("¿Eliminar este evento del historial?")) return;
+            const r = await fetch(`/ganado/eventos/${btn.dataset.id}`, { method: "DELETE" });
+            if (r.ok) location.reload();
+        });
+    });
+
+    document.getElementById("btn-eliminar").addEventListener("click", async (e) => {
+        const ident = document.getElementById("identificacion").textContent.trim();
+        const fb = document.getElementById("mensaje-feedback");
+        if (!confirm(`¿Seguro que quieres eliminar al animal ${ident}? Se borrará también su historial. Esta acción no se puede deshacer.`)) return;
+        const r = await fetch(`/ganado/api/${e.currentTarget.dataset.id}`, { method: "DELETE" });
+        if (r.ok) {
+            fb.style.color = "#00cba9";
+            fb.textContent = `✅ Animal ${ident} eliminado. Redirigiendo...`;
+            setTimeout(() => { window.location.href = "/ganado/lista"; }, 1500);
+        } else {
+            const err = await r.json().catch(() => ({}));
+            fb.style.color = "#ff6b6b";
+            fb.textContent = `❌ Error al eliminar: ${err.detail || r.statusText}`;
+        }
+    });
+</script>
+{% endblock %}
